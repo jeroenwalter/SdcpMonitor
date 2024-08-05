@@ -1,0 +1,65 @@
+﻿<mah:MetroWindow
+  x:Class="SdcpMonitor.SettingsView"
+  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+  xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
+  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+  xmlns:sdcpMonitor="clr-namespace:SdcpMonitor"
+  Title="{Binding Title}"
+  Width="400"
+  Height="450"
+  d:DataContext="{d:DesignInstance Type={x:Type sdcpMonitor:SettingsViewModel},
+                                   IsDesignTimeCreatable=False}"
+  SizeToContent="WidthAndHeight"
+  mc:Ignorable="d">
+  <Grid Margin="8">
+    <Grid.RowDefinitions>
+      <RowDefinition />
+      <RowDefinition />
+    </Grid.RowDefinitions>
+    <StackPanel
+      Grid.Row="0"
+      Margin="0,8,0,0"
+      Orientation="Vertical">
+      <TextBlock Text="Status" />
+      <TextBlock Margin="4,0,0,0" Text="{Binding Status}" />
+      <ComboBox ItemsSource="{Binding Printers}" SelectedItem="{Binding CurrentPrinter}" />
+      <StackPanel Margin="0,8,0,0" Orientation="Horizontal">
+        <Button
+          Margin="4"
+          Command="{Binding StartDiscoveryCommand}"
+          Visibility="{Binding IsDiscovering, Converter={StaticResource NotBooleanToVisibilityConverter}}">
+          Scan for printers
+        </Button>
+        <!--<Button
+          Margin="4"
+          Command="{Binding StopDiscoveryCommand}"
+          Visibility="{Binding IsDiscovering, Converter={StaticResource BooleanToVisibilityConverter}}">
+          Stop Discovery
+        </Button>
+        <Button
+          Margin="4"
+          Command="{Binding ConnectCommand}"
+          Visibility="{Binding IsConnected, Converter={StaticResource NotBooleanToVisibilityConverter}}">
+          Connect
+        </Button>
+        <Button
+          Margin="4"
+          Command="{Binding DisconnectCommand}"
+          Visibility="{Binding IsConnected, Converter={StaticResource BooleanToVisibilityConverter}}">
+          Disconnect
+        </Button>-->
+      </StackPanel>
+    </StackPanel>
+    <StackPanel
+      Grid.Row="1"
+      Margin="0,8,0,0"
+      Orientation="Vertical">
+      <CheckBox Margin="4" IsChecked="{Binding MinimizeToTrayOnClose}">Minimize/Close to tray</CheckBox>
+      <CheckBox Margin="4,0,0,8" IsChecked="{Binding ConnectToPrinterAtStart}">Connect to printer at start-up</CheckBox>
+      <CheckBox Margin="4" IsChecked="{Binding ShowAdvancedUi}">Show advanced options</CheckBox>
+      <ComboBox ItemsSource="{Binding Themes}" SelectedItem="{Binding CurrentTheme}" />
+    </StackPanel>
+  </Grid>
+</mah:MetroWindow>

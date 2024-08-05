@@ -1,0 +1,53 @@
+﻿<mah:MetroWindow
+  x:Class="SdcpMonitor.AboutView"
+  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+  xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
+  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+  Title="AboutView"
+  Width="800"
+  Height="450"
+  mc:Ignorable="d">
+  <Grid>
+
+    <RichTextBox IsDocumentEnabled="True" IsReadOnly="True">
+      <FlowDocument>
+        <Paragraph FontSize="20" FontWeight="Bold">
+          <Image Source="/Images/Saturn4UltraViewerIcon.ico" Width="64" />
+          Sdcp Monitor
+        </Paragraph>
+        <Paragraph>
+          Copyright (c) 2024 Jeroen Walter<LineBreak />
+          License:<Hyperlink NavigateUri="https://github.com/jeroenwalter/SdcpMonitor?tab=MIT-1-ov-file">MIT</Hyperlink>
+          <LineBreak />
+          Github:<Hyperlink NavigateUri="https://github.com/jeroenwalter/SdcpMonitor">https://github.com/jeroenwalter/SdcpMonitor</Hyperlink>
+        </Paragraph>
+        <Paragraph>Using the following projects:</Paragraph>
+        <List Margin="0" Padding="0">
+          <ListItem Margin="40,0,0,0">
+            <Paragraph>
+              <Hyperlink NavigateUri="https://github.com/djonasdev/NLogViewer">Sentinel.NLogViewer</Hyperlink>
+            </Paragraph>
+          </ListItem>
+          <ListItem Margin="40,0,0,0">
+            <Paragraph>
+              <Hyperlink NavigateUri="https://github.com/HavenDV/H.NotifyIcon">H.NotifyIcon</Hyperlink>
+            </Paragraph>
+          </ListItem>
+
+          <ListItem Margin="40,0,0,0">
+            <Paragraph>
+              <Hyperlink NavigateUri="https://mahapps.com/">MahApps.Metro</Hyperlink>
+            </Paragraph>
+          </ListItem>
+        </List>
+        <Paragraph>Documentation:</Paragraph>
+        <Paragraph>
+          <Hyperlink NavigateUri="https://github.com/cbd-tech/SDCP-Smart-Device-Control-Protocol-V3.0.0">Smart Device Control Protocol (SDCP) v3.0.0</Hyperlink>
+        </Paragraph>
+      </FlowDocument>
+
+    </RichTextBox>
+  </Grid>
+</mah:MetroWindow>

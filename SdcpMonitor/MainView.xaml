@@ -1,0 +1,193 @@
+﻿<mah:MetroWindow
+  x:Class="SdcpMonitor.MainView"
+  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+  xmlns:mah="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
+  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+  xmlns:tb="clr-namespace:H.NotifyIcon;assembly=H.NotifyIcon.Wpf"
+  xmlns:sdcpMonitor="clr-namespace:SdcpMonitor"
+  Title="{Binding Title}"
+  d:DataContext="{d:DesignInstance Type={x:Type sdcpMonitor:MainViewModel},
+                                   IsDesignTimeCreatable=False}"
+  SizeToContent="WidthAndHeight"
+  mc:Ignorable="d">
+
+  <Grid Width="Auto" Height="Auto">
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="Auto" />
+    </Grid.ColumnDefinitions>
+
+    <tb:TaskbarIcon
+      x:Name="MyNotifyIcon"
+      DoubleClickCommand="{Binding ShowMainWindowCommand}"
+      IconSource="/Images/Saturn4UltraViewerIcon.ico"
+      LeftClickCommand="{Binding ShowMainWindowCommand}"
+      ToolTipText="{Binding TrayToolTip}">
+
+      <tb:TaskbarIcon.ContextMenu>
+        <ContextMenu>
+          <TextBlock Text="{Binding TrayToolTip}" />
+          <MenuItem Command="{Binding ShowMainWindowCommand}" Header="Show">
+            <MenuItem.Icon>
+              <Image
+                Width="16"
+                Height="16"
+                Source="/Images/Preferences.png" />
+            </MenuItem.Icon>
+          </MenuItem>
+
+          <Separator />
+
+          <MenuItem Command="{Binding ExitProgramCommand}" Header="Exit">
+            <MenuItem.Icon>
+              <Image
+                Width="16"
+                Height="16"
+                Source="/Images/Close.png" />
+            </MenuItem.Icon>
+          </MenuItem>
+        </ContextMenu>
+      </tb:TaskbarIcon.ContextMenu>
+
+    </tb:TaskbarIcon>
+
+    <Grid Grid.Column="0" Margin="8">
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="Auto" />
+      </Grid.RowDefinitions>
+      <Border
+        Grid.Row="0"
+        Padding="4"
+        BorderBrush="Black"
+        BorderThickness="1">
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="Auto" />
+          </Grid.ColumnDefinitions>
+          <Grid.RowDefinitions>
+            <RowDefinition />
+            <RowDefinition />
+            <RowDefinition />
+            <RowDefinition />
+            <RowDefinition />
+            <RowDefinition />
+            <RowDefinition />
+            <RowDefinition />
+            <RowDefinition />
+          </Grid.RowDefinitions>
+
+          <TextBlock
+            Grid.Row="0"
+            Grid.Column="0"
+            Text="Printer" />
+          <TextBlock
+            Grid.Row="0"
+            Grid.Column="1"
+            Margin="4,0,0,0"
+            Text="{Binding PrinterName}" />
+
+          <TextBlock
+            Grid.Row="1"
+            Grid.Column="0"
+            Text="Status" />
+          <TextBlock
+            Grid.Row="1"
+            Grid.Column="1"
+            Margin="4,0,0,0"
+            Text="{Binding Status}" />
+
+          <TextBlock
+            Grid.Row="2"
+            Grid.Column="0"
+            Text="File" />
+          <TextBlock
+            Grid.Row="2"
+            Grid.Column="1"
+            Width="250"
+            Margin="4,0,0,0"
+            Text="{Binding File}" />
+
+
+          <TextBlock
+            Grid.Row="3"
+            Grid.Column="0"
+            Text="Progress" />
+          <TextBlock
+            Grid.Row="3"
+            Grid.Column="1"
+            Margin="4,0,0,0"
+            Text="{Binding Progress}" />
+
+          <TextBlock
+            Grid.Row="4"
+            Grid.Column="0"
+            Text="Layers" />
+          <TextBlock
+            Grid.Row="4"
+            Grid.Column="1"
+            Margin="4,0,0,0"
+            Text="{Binding Layers}" />
+
+          <TextBlock
+            Grid.Row="5"
+            Grid.Column="0"
+            Text="Duration" />
+          <TextBlock
+            Grid.Row="5"
+            Grid.Column="1"
+            Margin="4,0,0,0"
+            Text="{Binding Duration}" />
+
+
+          <TextBlock
+            Grid.Row="6"
+            Grid.Column="0"
+            Text="Start" />
+          <TextBlock
+            Grid.Row="6"
+            Grid.Column="1"
+            Margin="4,0,0,0"
+            Text="{Binding StartTime}" />
+
+
+          <TextBlock
+            Grid.Row="7"
+            Grid.Column="0"
+            Text="ETA" />
+          <TextBlock
+            Grid.Row="7"
+            Grid.Column="1"
+            Margin="4,0,0,0"
+            Text="{Binding StopTime}" />
+
+        </Grid>
+      </Border>
+      <StackPanel
+        Grid.Row="1"
+        Margin="0,8,0,0"
+        Orientation="Horizontal" >
+        <Button
+          Margin="4"
+          Command="{Binding ShowLoggerCommand}"
+          Visibility="{Binding ShowAdvancedUi, Converter={StaticResource BooleanToVisibilityConverter}}">
+          Show log
+        </Button>
+        <Button
+          Margin="4"
+          Command="{Binding ShowCameraCommand}"
+          Visibility="Collapsed">
+          Show camera
+        </Button>
+        <Button Margin="4" Command="{Binding ShowSettingsCommand}">Settings</Button>
+        <Button Margin="4" Command="{Binding ShowAboutCommand}">About</Button>
+        <Button Margin="4" Command="{Binding ExitProgramCommand}">Exit</Button>
+
+      </StackPanel>
+
+    </Grid>
+  </Grid>
+</mah:MetroWindow>

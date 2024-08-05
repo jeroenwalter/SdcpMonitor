@@ -1,0 +1,25 @@
+﻿<mah:MetroWindow
+  x:Class="SdcpMonitor.LoggerView"
+  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+  xmlns:mah="http://metro.mahapps.com/winfx/xaml/controls"
+  xmlns:dj="clr-namespace:DJ;assembly=NLogViewer"
+  xmlns:sdcpMonitor="clr-namespace:SdcpMonitor"
+  Title="LoggerView"
+  Width="800"
+  Height="450"
+  mc:Ignorable="d"
+  d:DataContext="{d:DesignInstance Type={x:Type sdcpMonitor:LoggerViewModel},
+                                 IsDesignTimeCreatable=False}">
+  <Grid>
+    
+      <Grid.RowDefinitions>
+        <RowDefinition Height="*" />
+      </Grid.RowDefinitions>
+
+      <dj:NLogViewer Grid.Row="0" MaxCount="1" />
+    
+  </Grid>
+</mah:MetroWindow>
