@@ -24,8 +24,10 @@
       Orientation="Vertical">
       <TextBlock Text="Status" />
       <TextBlock Margin="4,0,0,0" Text="{Binding Status}" />
-      <ComboBox ItemsSource="{Binding Printers}" SelectedItem="{Binding CurrentPrinter}" />
+      <!--<ComboBox ItemsSource="{Binding Printers}" SelectedItem="{Binding CurrentPrinter}" />-->
       <StackPanel Margin="0,8,0,0" Orientation="Horizontal">
+        <TextBlock Margin="4" Text="{Binding CurrentPrinter}"/>
+        
         <Button
           Margin="4"
           Command="{Binding StartDiscoveryCommand}"

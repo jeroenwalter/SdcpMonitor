@@ -6,6 +6,7 @@ using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Sdcp;
+using System.Net;
 
 namespace SdcpMonitor;
 
@@ -64,8 +65,20 @@ public partial class SettingsViewModel : ObservableRecipient
       var self = (SettingsViewModel)viewModel;
       Application.Current.Dispatcher.InvokeAsync(() => self.OnDeviceFound(deviceDiscoveredMessage.Value));
     });
+
+    if (_settings.Printers.Count != 0)
+    {
+      CurrentPrinter = $"{_settings.Printers.First().Name} ({_settings.Printers.First().Ip})";
+      Printers.Add(CurrentPrinter);
+    }
   }
 
+
+
+  partial void OnCurrentPrinterChanged(string value)
+  {
+    _settingsChanged = true;
+  }
 
   protected override void OnDeactivated()
   {
@@ -91,7 +104,7 @@ public partial class SettingsViewModel : ObservableRecipient
   private IAsyncRelayCommand? _disconnectCommand;
   public IAsyncRelayCommand DisconnectCommand => _disconnectCommand ??= new AsyncRelayCommand(DisconnectAsync);
 
-
+  
   private async Task OnDeviceFound(Device device)
   {
     _device = device;
