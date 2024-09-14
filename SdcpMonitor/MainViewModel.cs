@@ -138,23 +138,10 @@ public sealed partial class MainViewModel : ObservableRecipient
 
   private IRelayCommand? _exitProgramCommand;
   public IRelayCommand ExitProgramCommand => _exitProgramCommand ??= new RelayCommand(_navigationService.ExitProgram);
-
-  private IRelayCommand? _showCameraCommand;
-  public IRelayCommand ShowCameraCommand =>
-    _showCameraCommand ??= new RelayCommand(() => _navigationService.ShowCameraView(),
-      () => _deviceCommunication?.IsConnected == true);
-
-  /*
-  private long _burninLayers = 5;
-  private long _transitionLayers = 5;
-  private double _exposureTimeLayer = 2.4;
-  private double _exposureTimeBurninLayer = 30;
-  private long _ticksAtFirstNormalLayer = 0;
-  */
-  //private double _averageLayerTime = 0.0;
-  private readonly List<double> _layerTimes = new();
-  private long _previousCurrentTicks = 0;
-  private long _previousCurrentLayer = 0;
+  
+  private readonly List<double> _layerTimes = [];
+  private long _previousCurrentTicks;
+  private long _previousCurrentLayer;
   private DateTime _calculatedStop = DateTime.MinValue;
 
   private void UpdateStatus(StatusMessage status)
@@ -210,7 +197,6 @@ public sealed partial class MainViewModel : ObservableRecipient
     Usage = $"Film {ReleaseFilmCount/60000.0 * 100.0:F1}% ({ReleaseFilmCount}/60000) | Screen {ScreenExposureTime.Days * 24 + ScreenExposureTime.Hours} hours";
 
     TrayToolTip = $"{Status}\n{File}\n{Progress} ({Layers})\nETA: {_calculatedStop:HH:mm:ss}\nTemperature: {status.Status.TempOfUVLED:F1} \u2103\nFilm {ReleaseFilmCount / 60000.0 * 100.0:F1}% ({ReleaseFilmCount}/60000)";
-    WeakReferenceMessenger.Default.Send(new CameraOverlayTextChangedMessage(TrayToolTip));
   }
 
 
@@ -223,7 +209,7 @@ public sealed partial class MainViewModel : ObservableRecipient
 
     _deviceCommunication = App.Current.Services.GetRequiredService<IDeviceCommunication>();
     await _deviceCommunication.ConnectAsync(_device!).ConfigureAwait(true);
-    ShowCameraCommand.NotifyCanExecuteChanged();
+    
     IsConnected = _deviceCommunication.IsConnected;
 
     _logger.LogInformation(IsConnected ? "Connected to {}" : "Failed to connect to {}", _device.Data.MainboardIP);
@@ -240,7 +226,5 @@ public sealed partial class MainViewModel : ObservableRecipient
     await _deviceCommunication.DisconnectAsync().ConfigureAwait(true);
 
     _logger.LogInformation("Disconnected from {}", _device?.Data.MainboardIP);
-
-    ShowCameraCommand.NotifyCanExecuteChanged();
   }
 }

@@ -10,6 +10,9 @@
   Title="{Binding Title}"
   d:DataContext="{d:DesignInstance Type={x:Type sdcpMonitor:MainViewModel},
                                    IsDesignTimeCreatable=False}"
+  Icon="/Images/Saturn4UltraViewerIcon.ico"
+  ShowIconOnTitleBar="True"
+  ShowTitleBar="True"
   SizeToContent="WidthAndHeight"
   mc:Ignorable="d">
 

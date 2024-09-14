@@ -129,8 +129,6 @@ namespace SdcpMonitor
       services.AddSingleton<INavigationService, NavigationService>();
       services.AddTransient<MainView>();
       services.AddTransient<MainViewModel>();
-      services.AddTransient<CameraView>();
-      services.AddTransient<CameraViewModel>();
       services.AddTransient<LoggerView>();
       services.AddTransient<LoggerViewModel>();
       services.AddTransient<AboutView>();

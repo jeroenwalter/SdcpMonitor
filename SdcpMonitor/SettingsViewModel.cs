@@ -49,10 +49,16 @@ public partial class SettingsViewModel : ObservableRecipient
     _settings = settings;
     _deviceDiscovery = deviceDiscovery;
 
-    MinimizeToTrayOnClose = _settings.MinimizeToTrayOnClose;
-    ConnectToPrinterAtStart = _settings.ConnectToPrinterAtStart;
-    CurrentTheme = _settings.Theme == "" ? Themes[0] : _settings.Theme;
-    ShowAdvancedUi = _settings.ShowAdvancedUi;
+    if (_settings.Printers.Count != 0)
+    {
+      _currentPrinter = $"{_settings.Printers.First().Name} ({_settings.Printers.First().Ip})";
+      _printers.Add(CurrentPrinter);
+    }
+
+    _minimizeToTrayOnClose = _settings.MinimizeToTrayOnClose;
+    _connectToPrinterAtStart = _settings.ConnectToPrinterAtStart;
+    _currentTheme = _settings.Theme == "" ? Themes[0] : _settings.Theme;
+    _showAdvancedUi = _settings.ShowAdvancedUi;
   }
 
 
@@ -65,12 +71,6 @@ public partial class SettingsViewModel : ObservableRecipient
       var self = (SettingsViewModel)viewModel;
       Application.Current.Dispatcher.InvokeAsync(() => self.OnDeviceFound(deviceDiscoveredMessage.Value));
     });
-
-    if (_settings.Printers.Count != 0)
-    {
-      CurrentPrinter = $"{_settings.Printers.First().Name} ({_settings.Printers.First().Ip})";
-      Printers.Add(CurrentPrinter);
-    }
   }
 
 

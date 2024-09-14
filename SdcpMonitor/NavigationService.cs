@@ -31,15 +31,7 @@ namespace SdcpMonitor
 
       MainView.Close();
     }
-
-
-    public void ShowCameraView()
-    {
-      var window = App.Current.Services.GetRequiredService<CameraView>();
-      window.Owner = App.Current.MainWindow;
-      window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
-      window.Show();
-    }
+    
 
     public void ShowLoggerView()
     {
