@@ -14,7 +14,7 @@
     <RichTextBox IsDocumentEnabled="True" IsReadOnly="True">
       <FlowDocument>
         <Paragraph FontSize="20" FontWeight="Bold">
-          <Image Source="/Images/Saturn4UltraViewerIcon.ico" Width="64" />
+          <Image Width="64" Source="/Images/Saturn4UltraViewerIcon.ico" />
           Sdcp Monitor
         </Paragraph>
         <Paragraph>

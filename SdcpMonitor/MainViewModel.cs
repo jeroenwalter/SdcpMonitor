@@ -27,6 +27,12 @@ public sealed partial class MainViewModel : ObservableRecipient
   [ObservableProperty] private bool _isConnected;
   [ObservableProperty] private bool _isDiscovering;
   [ObservableProperty] private bool _showAdvancedUi;
+  [ObservableProperty] private string _temperatures = "";
+  [ObservableProperty] private long _releaseFilmCount;
+  [ObservableProperty] private TimeSpan _screenExposureTime;
+  [ObservableProperty] private string _usage = "";
+  [ObservableProperty] private string _calculatedStopTime = "";
+
   [ObservableProperty] private ObservableCollection<string> _printers = [];
 
   private readonly INavigationService _navigationService;
@@ -105,6 +111,23 @@ public sealed partial class MainViewModel : ObservableRecipient
   public IRelayCommand ShowSettingsCommand =>
     _showSettingsCommand ??= new RelayCommand(_navigationService.ShowSettingsView);
 
+
+  private IAsyncRelayCommand? _refreshCommand;
+
+  public IAsyncRelayCommand RefreshCommand =>
+    _refreshCommand ??= new AsyncRelayCommand(RefreshStatusAndAttributesAsync);
+
+
+  private async Task RefreshStatusAndAttributesAsync()
+  {
+    if (_deviceCommunication == null)
+      return;
+
+    await _deviceCommunication.GetAttributesAsync().ConfigureAwait(true);
+    await _deviceCommunication.GetStatusAsync().ConfigureAwait(true);
+  }
+
+
   private IRelayCommand? _showAboutCommand;
   public IRelayCommand ShowAboutCommand => _showAboutCommand ??= new RelayCommand(_navigationService.ShowAboutView);
 
@@ -117,7 +140,6 @@ public sealed partial class MainViewModel : ObservableRecipient
   public IRelayCommand ExitProgramCommand => _exitProgramCommand ??= new RelayCommand(_navigationService.ExitProgram);
 
   private IRelayCommand? _showCameraCommand;
-
   public IRelayCommand ShowCameraCommand =>
     _showCameraCommand ??= new RelayCommand(() => _navigationService.ShowCameraView(),
       () => _deviceCommunication?.IsConnected == true);
@@ -128,22 +150,36 @@ public sealed partial class MainViewModel : ObservableRecipient
     PrinterName = _device?.Data.Name ?? "---";
     Status = string.Join(",", status.Status.CurrentStatus);
     Progress = status.Status.PrintInfo.TotalLayer != 0
-      ? $"{100.0 * status.Status.PrintInfo.CurrentLayer / status.Status.PrintInfo.TotalLayer:F} %"
+      ? $"{100.0 * status.Status.PrintInfo.CurrentLayer / status.Status.PrintInfo.TotalLayer:F2} %"
       : "---";
-
+    
     Layers = $"current {status.Status.PrintInfo.CurrentLayer} | total {status.Status.PrintInfo.TotalLayer}";
     TimeSpan currentTicks = TimeSpan.FromMilliseconds(status.Status.PrintInfo.CurrentTicks);
     TimeSpan totalTicks = TimeSpan.FromMilliseconds(status.Status.PrintInfo.TotalTicks);
     DateTime now = DateTime.Now;
     DateTime start = now - currentTicks;
     DateTime stop = start + totalTicks;
-    StartTime = start.ToString("yyyy/M/d HH:mm:ss");
-    StopTime = stop.ToString("yyyy/M/d HH:mm:ss");
+    
+    // TODO: take into account the time needed for the burn-in layers and the transition layers
+    // calculate layer time from delta between 2 layers, determine that burn-in and transition layers are done
+    double msPerLayer = status.Status.PrintInfo.CurrentLayer > 0 ? (double)status.Status.PrintInfo.CurrentTicks / (double)status.Status.PrintInfo.CurrentLayer : 0;
+    TimeSpan eta = TimeSpan.FromMilliseconds(status.Status.PrintInfo.TotalLayer * msPerLayer);
+    DateTime calculatedStop = start + eta;
+    CalculatedStopTime = $@"{calculatedStop:HH:mm:ss} | Duration: {eta:dd\.hh\:mm\:ss} | Per Layer {1000.0 * msPerLayer:F2} s";
+
+    StartTime = $"{start:HH:mm:ss}";
+    StopTime = $"{stop:HH:mm:ss}";
     Duration = $@"{currentTicks:dd\.hh\:mm\:ss} / {totalTicks:dd\.hh\:mm\:ss}";
+    
     File = $"{status.Status.PrintInfo.Filename}";
+    ReleaseFilmCount = status.Status.ReleaseFilm;
+    ScreenExposureTime = TimeSpan.FromSeconds(status.Status.PrintScreen);
+    Temperatures = $"UV Led {status.Status.TempOfUVLED:F1} \u2103";
+    //$"Box: {status.Status.TempOfBox:F1} | UV Led {status.Status.TempOfUVLED:F1} | Target Box {status.Status.TempTargetBox:F1}";
 
-    TrayToolTip = $"{Status}\n{File}\n{Progress} ({Layers})\nETA: {StopTime}";
+    Usage = $"Film {ReleaseFilmCount/60000.0 * 100.0:F1}% ({ReleaseFilmCount}/60000) | Screen {ScreenExposureTime.Days * 24 + ScreenExposureTime.Hours} hours";
 
+    TrayToolTip = $"{Status}\n{File}\n{Progress} ({Layers})\nETA: {StopTime}\nTemperature: {status.Status.TempOfUVLED:F1} \u2103\nFilm {ReleaseFilmCount / 60000.0 * 100.0:F1}% ({ReleaseFilmCount}/60000)";
     WeakReferenceMessenger.Default.Send(new CameraOverlayTextChangedMessage(TrayToolTip));
   }
 
@@ -153,10 +189,14 @@ public sealed partial class MainViewModel : ObservableRecipient
     if (_device == null) 
       return;
 
+    _logger.LogInformation("Connecting to {}", _device.Data.MainboardIP);
+
     _deviceCommunication = App.Current.Services.GetRequiredService<IDeviceCommunication>();
     await _deviceCommunication.ConnectAsync(_device!).ConfigureAwait(true);
     ShowCameraCommand.NotifyCanExecuteChanged();
     IsConnected = _deviceCommunication.IsConnected;
+
+    _logger.LogInformation(IsConnected ? "Connected to {}" : "Failed to connect to {}", _device.Data.MainboardIP);
   }
 
 
@@ -168,6 +208,9 @@ public sealed partial class MainViewModel : ObservableRecipient
       return;
 
     await _deviceCommunication.DisconnectAsync().ConfigureAwait(true);
+
+    _logger.LogInformation("Disconnected from {}", _device?.Data.MainboardIP);
+
     ShowCameraCommand.NotifyCanExecuteChanged();
   }
 }

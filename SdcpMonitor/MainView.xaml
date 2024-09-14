@@ -5,8 +5,8 @@
   xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
   xmlns:mah="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
   xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-  xmlns:tb="clr-namespace:H.NotifyIcon;assembly=H.NotifyIcon.Wpf"
   xmlns:sdcpMonitor="clr-namespace:SdcpMonitor"
+  xmlns:tb="clr-namespace:H.NotifyIcon;assembly=H.NotifyIcon.Wpf"
   Title="{Binding Title}"
   d:DataContext="{d:DesignInstance Type={x:Type sdcpMonitor:MainViewModel},
                                    IsDesignTimeCreatable=False}"
@@ -69,6 +69,8 @@
             <ColumnDefinition Width="Auto" />
           </Grid.ColumnDefinitions>
           <Grid.RowDefinitions>
+            <RowDefinition />
+            <RowDefinition />
             <RowDefinition />
             <RowDefinition />
             <RowDefinition />
@@ -162,14 +164,32 @@
             Grid.Row="7"
             Grid.Column="1"
             Margin="4,0,0,0"
-            Text="{Binding StopTime}" />
+            Text="{Binding CalculatedStopTime}" />
 
+          <TextBlock
+            Grid.Row="8"
+            Grid.Column="0"
+            Text="Temperatures" />
+          <TextBlock
+            Grid.Row="8"
+            Grid.Column="1"
+            Margin="4,0,0,0"
+            Text="{Binding Temperatures}" />
+          <TextBlock
+            Grid.Row="9"
+            Grid.Column="0"
+            Text="Usage" />
+          <TextBlock
+            Grid.Row="9"
+            Grid.Column="1"
+            Margin="4,0,0,0"
+            Text="{Binding Usage}" />
         </Grid>
       </Border>
       <StackPanel
         Grid.Row="1"
         Margin="0,8,0,0"
-        Orientation="Horizontal" >
+        Orientation="Horizontal">
         <Button
           Margin="4"
           Command="{Binding ShowLoggerCommand}"
@@ -182,6 +202,7 @@
           Visibility="Collapsed">
           Show camera
         </Button>
+        <Button Margin="4" Command="{Binding RefreshCommand}">Refresh</Button>
         <Button Margin="4" Command="{Binding ShowSettingsCommand}">Settings</Button>
         <Button Margin="4" Command="{Binding ShowAboutCommand}">About</Button>
         <Button Margin="4" Command="{Binding ExitProgramCommand}">Exit</Button>

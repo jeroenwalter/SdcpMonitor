@@ -9,7 +9,7 @@ namespace SdcpMonitor
   /// <summary>
   /// Interaction logic for AboutView.xaml
   /// </summary>
-  public partial class AboutView : MetroWindow
+  public partial class AboutView //: MetroWindow
   {
     public AboutView()
     {
