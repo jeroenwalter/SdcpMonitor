@@ -144,6 +144,18 @@ public sealed partial class MainViewModel : ObservableRecipient
     _showCameraCommand ??= new RelayCommand(() => _navigationService.ShowCameraView(),
       () => _deviceCommunication?.IsConnected == true);
 
+  /*
+  private long _burninLayers = 5;
+  private long _transitionLayers = 5;
+  private double _exposureTimeLayer = 2.4;
+  private double _exposureTimeBurninLayer = 30;
+  private long _ticksAtFirstNormalLayer = 0;
+  */
+  //private double _averageLayerTime = 0.0;
+  private readonly List<double> _layerTimes = new();
+  private long _previousCurrentTicks = 0;
+  private long _previousCurrentLayer = 0;
+  private DateTime _calculatedStop = DateTime.MinValue;
 
   private void UpdateStatus(StatusMessage status)
   {
@@ -162,12 +174,30 @@ public sealed partial class MainViewModel : ObservableRecipient
     
     // TODO: take into account the time needed for the burn-in layers and the transition layers
     // calculate layer time from delta between 2 layers, determine that burn-in and transition layers are done
-    double msPerLayer = status.Status.PrintInfo.CurrentLayer > 0 ? (double)status.Status.PrintInfo.CurrentTicks / (double)status.Status.PrintInfo.CurrentLayer : 0;
-    TimeSpan eta = TimeSpan.FromMilliseconds(status.Status.PrintInfo.TotalLayer * msPerLayer);
-    DateTime calculatedStop = start + eta;
-    CalculatedStopTime = $@"{calculatedStop:HH:mm:ss} | Duration: {eta:dd\.hh\:mm\:ss} | Per Layer {1000.0 * msPerLayer:F2} s";
+    //double msPerLayer = status.Status.PrintInfo.CurrentLayer > 0 ? (double)status.Status.PrintInfo.CurrentTicks / (double)status.Status.PrintInfo.CurrentLayer : 0;
+    if ((status.Status.PrintInfo.CurrentLayer - _previousCurrentLayer) > 0)
+    {
+      if (_previousCurrentTicks > 0)
+      {
+        double msPerLayer = (double)(status.Status.PrintInfo.CurrentTicks - _previousCurrentTicks) /
+                            (status.Status.PrintInfo.CurrentLayer - _previousCurrentLayer);
 
-    StartTime = $"{start:HH:mm:ss}";
+        if (_layerTimes.Count == 25)
+          _layerTimes.RemoveAt(0);
+        _layerTimes.Add(msPerLayer);
+        msPerLayer = _layerTimes.Average();
+
+        TimeSpan eta = TimeSpan.FromMilliseconds(status.Status.PrintInfo.TotalLayer * msPerLayer);
+        _calculatedStop = start + eta;
+        CalculatedStopTime =
+          $@"{_calculatedStop:HH:mm:ss} | Duration: {eta:dd\.hh\:mm\:ss} | Per Layer {msPerLayer / 1000.0:F2} s";
+      }
+
+      _previousCurrentTicks = status.Status.PrintInfo.CurrentTicks;
+      _previousCurrentLayer = status.Status.PrintInfo.CurrentLayer;
+    }
+
+    StartTime = $"{start:HH:mm:ss} | Stop {stop:HH:mm:ss}";
     StopTime = $"{stop:HH:mm:ss}";
     Duration = $@"{currentTicks:dd\.hh\:mm\:ss} / {totalTicks:dd\.hh\:mm\:ss}";
     
@@ -179,7 +209,7 @@ public sealed partial class MainViewModel : ObservableRecipient
 
     Usage = $"Film {ReleaseFilmCount/60000.0 * 100.0:F1}% ({ReleaseFilmCount}/60000) | Screen {ScreenExposureTime.Days * 24 + ScreenExposureTime.Hours} hours";
 
-    TrayToolTip = $"{Status}\n{File}\n{Progress} ({Layers})\nETA: {StopTime}\nTemperature: {status.Status.TempOfUVLED:F1} \u2103\nFilm {ReleaseFilmCount / 60000.0 * 100.0:F1}% ({ReleaseFilmCount}/60000)";
+    TrayToolTip = $"{Status}\n{File}\n{Progress} ({Layers})\nETA: {_calculatedStop:HH:mm:ss}\nTemperature: {status.Status.TempOfUVLED:F1} \u2103\nFilm {ReleaseFilmCount / 60000.0 * 100.0:F1}% ({ReleaseFilmCount}/60000)";
     WeakReferenceMessenger.Default.Send(new CameraOverlayTextChangedMessage(TrayToolTip));
   }
 
