@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 
 namespace SdcpMonitor;
 
-internal class SettingsStorage 
+internal class SettingsStorage : ISettingsStorage
 {
   private readonly ILogger<SettingsStorage> _logger;
   private readonly JsonSerializerOptions _jsonSerializerOptions = new() { WriteIndented = true };

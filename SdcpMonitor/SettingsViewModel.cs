@@ -15,19 +15,20 @@ public partial class SettingsViewModel : ObservableRecipient
   private readonly ILogger<SettingsViewModel> _logger;
   private readonly Settings _settings;
   private readonly IDeviceDiscovery _deviceDiscovery;
+  private readonly IDispatcher _dispatcher;
   [ObservableProperty] private string _status = "---";
   [ObservableProperty] private string _title = "Settings";
   [ObservableProperty] private bool _minimizeToTrayOnClose;
   [ObservableProperty] private bool _connectToPrinterAtStart;
-  [ObservableProperty] private string _currentPrinter = "";
+  [ObservableProperty] private string _printer = "";
   [ObservableProperty] private bool _isConnected;
   [ObservableProperty] private bool _isDiscovering;
   [ObservableProperty] private bool _showAdvancedUi;
-  [ObservableProperty] private ObservableCollection<string> _printers = [];
 
-  [ObservableProperty] private ObservableCollection<string> _themes =
+  [ObservableProperty]
+  private ObservableCollection<string> _themes =
   [
-    "<Windows default>", 
+    "<Windows default>",
     "Light.Red", "Light.Green", "Light.Blue", "Light.Purple", "Light.Orange", "Light.Lime", "Light.Emerald",
     "Light.Teal", "Light.Cyan", "Light.Cobalt", "Light.Indigo",
     "Light.Violet", "Light.Pink", "Light.Magenta", "Light.Crimson", "Light.Amber", "Light.Yellow", "Light.Brown",
@@ -38,22 +39,18 @@ public partial class SettingsViewModel : ObservableRecipient
     "Dark.Taupe", "Dark.Sienna"
   ];
 
-  [ObservableProperty] private string _currentTheme = "";
-  private IDeviceCommunication? _deviceCommunication;
-  private Device? _device;
+  [ObservableProperty] private string _currentTheme;
   private bool _settingsChanged;
 
-  public SettingsViewModel(ILogger<SettingsViewModel> logger, Settings settings, IDeviceDiscovery deviceDiscovery)
+  public SettingsViewModel(ILogger<SettingsViewModel> logger, Settings settings, IDeviceDiscovery deviceDiscovery, IDispatcher dispatcher)
   {
     _logger = logger;
     _settings = settings;
     _deviceDiscovery = deviceDiscovery;
+    _dispatcher = dispatcher;
 
-    if (_settings.Printers.Count != 0)
-    {
-      _currentPrinter = $"{_settings.Printers.First().Name} ({_settings.Printers.First().Ip})";
-      _printers.Add(CurrentPrinter);
-    }
+    if (_settings.Printer != null)
+      _printer = _settings.Printer.ToString();
 
     _minimizeToTrayOnClose = _settings.MinimizeToTrayOnClose;
     _connectToPrinterAtStart = _settings.ConnectToPrinterAtStart;
@@ -69,13 +66,13 @@ public partial class SettingsViewModel : ObservableRecipient
     WeakReferenceMessenger.Default.Register<DeviceDiscoveredMessage>(this, (viewModel, deviceDiscoveredMessage) =>
     {
       var self = (SettingsViewModel)viewModel;
-      Application.Current.Dispatcher.InvokeAsync(() => self.OnDeviceFound(deviceDiscoveredMessage.Value));
+      _dispatcher.InvokeAsync(() => self.OnDeviceFound(deviceDiscoveredMessage.Value));
     });
   }
 
 
 
-  partial void OnCurrentPrinterChanged(string value)
+  partial void OnPrinterChanged(string value)
   {
     _settingsChanged = true;
   }
@@ -86,7 +83,7 @@ public partial class SettingsViewModel : ObservableRecipient
 
     if (_settingsChanged)
       WeakReferenceMessenger.Default.Send(new SettingsChangedMessage(_settings));
-    
+
     base.OnDeactivated();
   }
 
@@ -98,41 +95,22 @@ public partial class SettingsViewModel : ObservableRecipient
   private IAsyncRelayCommand? _stopDiscoveryCommand;
   public IAsyncRelayCommand StopDiscoveryCommand => _stopDiscoveryCommand ??= new AsyncRelayCommand(StopDiscoveryAsync);
 
-  private IAsyncRelayCommand? _connectCommand;
-  public IAsyncRelayCommand ConnectCommand => _connectCommand ??= new AsyncRelayCommand(ConnectAsync);
-
-  private IAsyncRelayCommand? _disconnectCommand;
-  public IAsyncRelayCommand DisconnectCommand => _disconnectCommand ??= new AsyncRelayCommand(DisconnectAsync);
-
   
   private async Task OnDeviceFound(Device device)
   {
-    _device = device;
-
-    if (_settings.Printers.All(printer => printer.Id != device.Id))
+    Status = $"Printer found: '{device.Data.Name} ({device.Data.MainboardIP})'";
+    _logger.LogInformation("OnDeviceFound: {Id} {Name} {Ip}", device.Data.MainboardID, device.Data.Name, device.Data.MainboardIP);
+    
+    _settings.Printer = new Printer
     {
-      _settings.Printers.Add(new Settings.Printer
-      {
-        Ip = device.Data.MainboardIP, Name = device.Data.Name, Id = device.Id
-      });
-      Printers.Add($"{device.Data.Name} ({device.Data.MainboardIP})");
-    }
+      Ip = device.Data.MainboardIP,
+      Name = device.Data.Name,
+      Id = device.Data.MainboardID
+    };
 
-    if (_device == null)
-    {
-      Status = "Does not compute";
-    }
-    else
-    {
-      Status = $"Printer found: '{_device.Data.Name} ({_device.Data.MainboardIP})'";
-
-      if (_settings.Printers.Count != 0)
-        CurrentPrinter = $"{_settings.Printers.First().Name} ({_settings.Printers.First().Ip})";
-      
-      _logger.LogInformation("OnDeviceFound: {Id} {Name} {Ip}", _device.Id, _device.Data.Name,
-        _device.Data.MainboardIP);
-    }
-
+    Printer = _settings.Printer.ToString();
+    _settingsChanged = true;
+    
     await StopDiscoveryAsync().ConfigureAwait(true);
   }
 
@@ -144,8 +122,6 @@ public partial class SettingsViewModel : ObservableRecipient
     IsDiscovering = true;
 
     Status = "Discovery started";
-    Printers.Clear();
-    _settings.Printers.Clear();
     _deviceDiscovery.Start(TimeSpan.FromSeconds(5));
   }
 
@@ -153,6 +129,7 @@ public partial class SettingsViewModel : ObservableRecipient
   private async Task StopDiscoveryAsync()
   {
     IsDiscovering = false;
+    Status = "Discovery stopped";
 
     if (!_deviceDiscovery.IsActive)
     {
@@ -161,35 +138,7 @@ public partial class SettingsViewModel : ObservableRecipient
 
     await _deviceDiscovery.StopAsync().ConfigureAwait(true);
   }
-
-
-  private async Task ConnectAsync()
-  {
-    if (_device == null)
-    {
-      return;
-    }
-
-    _deviceCommunication = App.Current.Services.GetRequiredService<IDeviceCommunication>();
-    await _deviceCommunication.ConnectAsync(_device!).ConfigureAwait(true);
-
-    IsConnected = _deviceCommunication.IsConnected;
-  }
-
-
-  private async Task DisconnectAsync()
-  {
-    IsConnected = false;
-
-    if (_deviceCommunication == null)
-    {
-      return;
-    }
-
-    await _deviceCommunication.DisconnectAsync().ConfigureAwait(true);
-
-  }
-
+  
 
   partial void OnMinimizeToTrayOnCloseChanged(bool value)
   {

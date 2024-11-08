@@ -9,4 +9,5 @@ public interface IDeviceCommunication
   Task GetStatusAsync();
   Task GetAttributesAsync();
   Task EnableVideoStreamAsync(bool enable);
+  Task RefreshStatus();
 }

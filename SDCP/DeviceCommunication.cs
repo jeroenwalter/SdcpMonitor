@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.Net;
 using System.Net.WebSockets;
 using System.Text;
@@ -11,6 +12,8 @@ namespace Sdcp;
 public class DeviceCommunication : IDeviceCommunication
 {
   private readonly ILogger<DeviceCommunication> _logger;
+  private readonly TimeProvider _timeProvider;
+  private readonly ITimer _timer;
   private const long StatusCommand = 0;
   private const long AttributesCommand = 1;
   private const long EnableDisableVideoStreamCommand = 386;
@@ -20,12 +23,42 @@ public class DeviceCommunication : IDeviceCommunication
   private Device? _device;
   private ulong _nextRequestId = 1;
   private ulong _requestTimeStamp = 0;
+  //private long _lastStatusUpdateTimestamp;
   public string VideoUrl { get; private set; } = "";
 
-  public DeviceCommunication(ILogger<DeviceCommunication> logger)
+
+  public DeviceCommunication(ILogger<DeviceCommunication> logger, TimeProvider timeProvider)
   {
     _logger = logger;
+    _timeProvider = timeProvider;
+    _timer = _timeProvider.CreateTimer(RefreshStatusTimerCallback, null, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
   }
+
+
+  private void RefreshStatusTimerCallback(object? state)
+  {
+    EventHandlers.TryAsync<EventArgs>(async (s, e) =>
+      {
+        await RefreshStatus().ConfigureAwait(false);
+      },
+    ex => Console.WriteLine($"[TryAsync Error Callback] Our exception handler caught: {ex}")).Invoke(null, EventArgs.Empty);
+  }
+
+
+  public async Task RefreshStatus()
+  {
+    try
+    {
+      await GetStatusAsync().ConfigureAwait(false);
+      await GetAttributesAsync().ConfigureAwait(false);
+    }
+    catch (Exception e)
+    {
+      Console.WriteLine(e);
+      //throw;
+    }
+  }
+
 
   public async Task ConnectAsync(Device device)
   {
@@ -39,7 +72,7 @@ public class DeviceCommunication : IDeviceCommunication
 
     var remote = IPEndPoint.Parse($"{_device.Data.MainboardIP}:3030");
     _logger.LogInformation("Opening web socket connection to {Ip}", remote);
-    
+
     _cancellationTokenSource = new CancellationTokenSource();
 
     _webSocket = new ClientWebSocket();
@@ -49,8 +82,8 @@ public class DeviceCommunication : IDeviceCommunication
     {
       _logger.LogInformation("Connected to {Name} on {Ip}", _device.Data.MachineName, remote);
       _messageHandlerTask = Task.Run(() => ReceiveMessages(_cancellationTokenSource.Token), _cancellationTokenSource.Token);
-      await GetStatusAsync().ConfigureAwait(false);
-      await GetAttributesAsync().ConfigureAwait(false);
+      
+      await RefreshStatus().ConfigureAwait(false);
     }
     else
     {
@@ -203,7 +236,7 @@ public class DeviceCommunication : IDeviceCommunication
 
         if (result.MessageType == WebSocketMessageType.Text)
           HandleMessage(Encoding.UTF8.GetString(ms.ToArray()));
-        
+
         ms.SetLength(0);
       }
     }
@@ -248,7 +281,7 @@ public class DeviceCommunication : IDeviceCommunication
       {
         HandleNoticeMessage(jsonMessage);
       }
-      else 
+      else
       {
         Debug.WriteLine("Unsupported message type");
       }
@@ -283,6 +316,9 @@ public class DeviceCommunication : IDeviceCommunication
   {
     var status = JsonSerializer.Deserialize<StatusMessage>(jsonMessage)!;
     _logger.LogDebug("Status: {Status}", status.Status.CurrentStatus);
+
+    _timer.Change(TimeSpan.FromSeconds(5), Timeout.InfiniteTimeSpan);
+    //_lastStatusUpdateTimestamp = _timeProvider.GetTimestamp();
 
     WeakReferenceMessenger.Default.Send(new DeviceStatusMessage(status));
   }

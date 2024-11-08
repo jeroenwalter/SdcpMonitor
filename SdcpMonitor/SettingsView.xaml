@@ -24,34 +24,21 @@
       Orientation="Vertical">
       <TextBlock Text="Status" />
       <TextBlock Margin="4,0,0,0" Text="{Binding Status}" />
-      <!--<ComboBox ItemsSource="{Binding Printers}" SelectedItem="{Binding CurrentPrinter}" />-->
       <StackPanel Margin="0,8,0,0" Orientation="Horizontal">
-        <TextBlock Margin="4" Text="{Binding CurrentPrinter}"/>
-        
+        <TextBlock Text="Printer" />
+        <TextBlock Text="{Binding CurrentPrinter}" />
         <Button
           Margin="4"
           Command="{Binding StartDiscoveryCommand}"
           Visibility="{Binding IsDiscovering, Converter={StaticResource NotBooleanToVisibilityConverter}}">
-          Scan for printers
+          Detect printer
         </Button>
-        <!--<Button
+        <Button
           Margin="4"
           Command="{Binding StopDiscoveryCommand}"
           Visibility="{Binding IsDiscovering, Converter={StaticResource BooleanToVisibilityConverter}}">
-          Stop Discovery
+          Stop
         </Button>
-        <Button
-          Margin="4"
-          Command="{Binding ConnectCommand}"
-          Visibility="{Binding IsConnected, Converter={StaticResource NotBooleanToVisibilityConverter}}">
-          Connect
-        </Button>
-        <Button
-          Margin="4"
-          Command="{Binding DisconnectCommand}"
-          Visibility="{Binding IsConnected, Converter={StaticResource BooleanToVisibilityConverter}}">
-          Disconnect
-        </Button>-->
       </StackPanel>
     </StackPanel>
     <StackPanel

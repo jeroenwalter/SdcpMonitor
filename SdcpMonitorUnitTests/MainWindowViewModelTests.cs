@@ -10,7 +10,8 @@ namespace SdcpMonitorUnitTests
   {
     private readonly MainViewModel _viewModel = new(Substitute.For<ILogger<MainViewModel>>(),
       Substitute.For<INavigationService>(),
-      Substitute.For<Settings>());
+      Substitute.For<Settings>(),
+      Substitute.For<IDispatcher>());
 
     [SetUp]
     public void Setup()

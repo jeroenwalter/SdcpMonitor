@@ -37,17 +37,20 @@ public sealed partial class MainViewModel : ObservableRecipient
 
   private readonly INavigationService _navigationService;
   private readonly Settings _settings;
+  private readonly IDispatcher _dispatcher;
   private IDeviceCommunication? _deviceCommunication;
   private Device? _device;
 
 
   public MainViewModel(ILogger<MainViewModel> logger,
     INavigationService navigationService,
-    Settings settings)
+    Settings settings,
+    IDispatcher dispatcher)
   {
     _logger = logger;
     _navigationService = navigationService;
     _settings = settings;
+    _dispatcher = dispatcher;
   }
 
 
@@ -58,13 +61,13 @@ public sealed partial class MainViewModel : ObservableRecipient
     WeakReferenceMessenger.Default.Register<SettingsChangedMessage>(this, (viewModel, settingsChangedMessage) =>
     {
       var self = (MainViewModel)viewModel;
-      Application.Current.Dispatcher.InvokeAsync(() => self.SyncWithSettingsAsync(settingsChangedMessage.Value));
+      _dispatcher.InvokeAsync(() => self.SyncWithSettingsAsync(settingsChangedMessage.Value));
     });
 
     WeakReferenceMessenger.Default.Register<DeviceStatusMessage>(this, (viewModel, deviceStatusMessage) =>
     {
       var self = (MainViewModel)viewModel;
-      Application.Current.Dispatcher.InvokeAsync(() => self.UpdateStatus(deviceStatusMessage.Value));
+      _dispatcher.InvokeAsync(() => self.UpdateStatus(deviceStatusMessage.Value));
     });
 
     await SyncWithSettingsAsync(_settings).ConfigureAwait(true);
@@ -75,23 +78,19 @@ public sealed partial class MainViewModel : ObservableRecipient
   {
     ShowAdvancedUi = _settings.ShowAdvancedUi;
 
-    _settings.Printers.ForEach(printer => Printers.Add($"{printer.Name} ({printer.Ip})"));
+    if (_settings.Printer != null)
+      CurrentPrinter = _settings.Printer.ToString();
 
-    if (_settings.Printers.Count != 0)
-      CurrentPrinter = $"{_settings.Printers.First().Name} ({_settings.Printers.First().Ip})";
+    if (!_settings.ConnectToPrinterAtStart || _settings.Printer == null) 
+      return;
+    
+    if (_device?.Data.MainboardID == _settings.Printer.Id && _device?.Data.MainboardIP == _settings.Printer.Ip)
+      return;
 
-    if (!_settings.ConnectToPrinterAtStart || _settings.Printers.Count == 0) return;
-
-    Settings.Printer printer = _settings.Printers.First();
-    if (IsConnected && _device?.Id != printer.Id)
+    if (IsConnected)
       await DisconnectAsync().ConfigureAwait(true);
 
-    _device = new Device()
-    {
-      Data = { MainboardID = printer.Id, MainboardIP = printer.Ip, MachineName = printer.Name, Name = printer.Name }
-    };
-
-    await ConnectAsync().ConfigureAwait(true);
+    await ConnectAsync(_settings.Printer).ConfigureAwait(true);
   }
 
 
@@ -123,8 +122,7 @@ public sealed partial class MainViewModel : ObservableRecipient
     if (_deviceCommunication == null)
       return;
 
-    await _deviceCommunication.GetAttributesAsync().ConfigureAwait(true);
-    await _deviceCommunication.GetStatusAsync().ConfigureAwait(true);
+    await _deviceCommunication.RefreshStatus().ConfigureAwait(true);
   }
 
 
@@ -200,11 +198,19 @@ public sealed partial class MainViewModel : ObservableRecipient
   }
 
 
-  private async Task ConnectAsync()
+  private async Task ConnectAsync(Printer printer)
   {
-    if (_device == null) 
-      return;
-
+    _device = new Device
+    {
+      Data =
+      {
+        MainboardID = printer.Id,
+        MainboardIP = printer.Ip,
+        MachineName = printer.Name,
+        Name = printer.Name
+      }
+    };
+    
     _logger.LogInformation("Connecting to {}", _device.Data.MainboardIP);
 
     _deviceCommunication = App.Current.Services.GetRequiredService<IDeviceCommunication>();
@@ -224,7 +230,7 @@ public sealed partial class MainViewModel : ObservableRecipient
       return;
 
     await _deviceCommunication.DisconnectAsync().ConfigureAwait(true);
-
+    
     _logger.LogInformation("Disconnected from {}", _device?.Data.MainboardIP);
   }
 }

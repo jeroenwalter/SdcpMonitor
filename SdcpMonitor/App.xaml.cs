@@ -71,7 +71,7 @@ namespace SdcpMonitor
     {
       await _host.StartAsync();
 
-      _settings = Services.GetRequiredService<SettingsStorage>().Load<Settings>(_settingsPath, true);
+      _settings = Services.GetRequiredService<ISettingsStorage>().Load<Settings>(_settingsPath, true);
       
       ApplyTheme();
 
@@ -105,7 +105,7 @@ namespace SdcpMonitor
       {
         if (_settings != null)
         {
-          var settingsStorage = Services.GetRequiredService<SettingsStorage>();
+          var settingsStorage = Services.GetRequiredService<ISettingsStorage>();
           settingsStorage.Save(_settings, _settingsPath);
         }
 
@@ -120,11 +120,13 @@ namespace SdcpMonitor
 
     private void ConfigureServices(IServiceCollection services)
     {
-      services.AddSingleton<SettingsStorage>();
       services.AddSingleton(_ => _settings!);
-
+      services.AddSingleton<IDispatcher, Dispatcher>();
+      
       services.AddSingleton<IDeviceDiscovery, DeviceDiscovery>();
       services.AddTransient<IDeviceCommunication, DeviceCommunication>();
+      services.AddTransient<ISettingsStorage, SettingsStorage>();
+      services.AddSingleton(TimeProvider.System);
 
       services.AddSingleton<INavigationService, NavigationService>();
       services.AddTransient<MainView>();
